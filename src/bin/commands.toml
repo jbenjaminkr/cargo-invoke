@@ -1,0 +1,63 @@
+[commands]
+[commands.architecture]
+description = "Reads all impls, structs, and imports, and creates architecture/impls.rs, architecture/structs.rs, and architecture/preludes.rs"
+usage = "cargo architecture [OPTIONS]"
+examples = [
+    "cargo architecture",
+    "cargo architecture --output custom_path",
+]
+[[commands.architecture.parameters]]
+name = "--output <PATH>"
+description = "Specifies the output directory for the generated files."
+
+[commands.diagram]
+description = "Creates a mermaid diagram from a Rust file containing structs which maps their relationships via state transitions from function calls"
+usage = "cargo diagram <TARGET> [OPTIONS]"
+examples = [
+    "cargo diagram src/lib.rs",
+    "cargo diagram src/main.rs --format png",
+]
+[[commands.diagram.parameters]]
+name = "<TARGET>"
+description = "Specifies the source Rust file to generate the diagram from."
+
+[commands.visualize]
+description = "Creates a png/svg from a mermaid diagram"
+usage = "cargo diagram <TARGET> [OPTIONS]"
+examples = [
+    "cargo diagram src/lib.rs",
+    "cargo diagram src/main.rs --format png",
+]
+[[commands.visualize.parameters]]
+name = "<TARGET>"
+description = ""
+
+[commands.connections]
+description = "Generates a Mermaid diagram showing class relationships through function calls"
+usage = "cargo connections [OPTIONS]"
+examples = [
+    "cargo connections",
+]
+[[commands.connections.parameters]]
+name = "[OPTIONS]"
+description = ""
+
+[commands.state_diagram]
+description = "Generates a Mermaid diagram showing struct relationships through state transitions"
+usage = "cargo state_diagram [OPTIONS]"
+examples = [
+    "cargo state_diagram",
+]
+[[commands.state_diagram.parameters]]
+name = "[OPTIONS]"
+description = ""
+
+[commands.class_diagram]
+description = "Generates a Mermaid diagram showing class relationships through state transitions"
+usage = "cargo class_diagram [OPTIONS]"
+examples = [
+    "cargo class_diagram",
+]
+[[commands.class_diagram.parameters]]
+name = "[OPTIONS]"
+description = ""

@@ -1,0 +1,7 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml",
+        "./tools/cargo-invoke/Cargo.toml"
+    ],
+    "rust-analyzer.checkOnSave.allTargets": true
+}
