@@ -5,50 +5,6 @@ use std::io::Write;
 use std::path::Path;
 use syn::{parse_file, Fields, Item, ItemStruct};
 
-// fn is_wrapper_struct(item_struct: &ItemStruct) -> bool {
-//     match &item_struct.fields {
-//         // If it has no fields at all
-//         Fields::Unit => true,
-
-//         // If it has named fields but they're very simple
-//         Fields::Named(fields) => {
-//             fields.named.is_empty() ||
-//             // Or if it only has primitive type fields
-//             fields.named.iter().all(|field| {
-//                 if let syn::Type::Path(type_path) = &field.ty {
-//                     if let Some(segment) = type_path.path.segments.last() {
-//                         let type_name = segment.ident.to_string();
-//                         return is_primitive_type(&type_name);
-//                     }
-//                 }
-//                 false
-//             })
-//         },
-
-//         // If it has tuple fields but they're very simple
-//         Fields::Unnamed(fields) => {
-//             fields.unnamed.is_empty() ||
-//             fields.unnamed.iter().all(|field| {
-//                 if let syn::Type::Path(type_path) = &field.ty {
-//                     if let Some(segment) = type_path.path.segments.last() {
-//                         let type_name = segment.ident.to_string();
-//                         return is_primitive_type(&type_name);
-//                     }
-//                 }
-//                 false
-//             })
-//         }
-//     }
-// }
-
-fn is_primitive_type(type_name: &str) -> bool {
-    let primitives = [
-        "u8", "u16", "u32", "u64", "u128", "i8", "i16", "i32", "i64", "i128", "f32", "f64", "bool",
-        "char", "str", "String", "Vec", "Array",
-    ];
-    primitives.iter().any(|&p| p == type_name)
-}
-
 fn transform_struct_to_trait(item_struct: &ItemStruct) -> TokenStream {
     let struct_name = &item_struct.ident;
     let trait_name = format_ident!("{}", struct_name);

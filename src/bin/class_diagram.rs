@@ -1,12 +1,10 @@
-use proc_macro2::TokenStream;
-use quote::quote;
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 use syn::{
-    parse_file, Field, Fields, FnArg, GenericArgument, ImplItem, ItemEnum, ItemImpl, ItemStruct,
-    Pat, PathArguments, ReturnType, Type, TypePath, Variant,
+    parse_file, Fields, FnArg, GenericArgument, ImplItem, ItemEnum, ItemImpl, ItemStruct, Pat,
+    PathArguments, ReturnType, Type, TypePath,
 };
 
 #[derive(Debug)]
@@ -65,7 +63,7 @@ fn main() -> std::io::Result<()> {
     let relationships = extract_relationships(&structs, &enums);
 
     let mermaid = generate_mermaid_diagram(&structs, &enums, &relationships);
-    let mut file = File::create("diagrams/class.mermaid")?;
+    let mut file = File::create("diagrams/class_diagram.mermaid")?;
     file.write_all(mermaid.as_bytes())?;
 
     Ok(())
@@ -138,14 +136,110 @@ fn process_file(
 }
 
 fn process_enum(item_enum: &ItemEnum) -> EnumInfo {
-    let name = item_enum.ident.to_string();
-    let variants = item_enum
-        .variants
-        .iter()
-        .map(|variant| variant.ident.to_string())
-        .collect();
+    EnumInfo {
+        name: item_enum.ident.to_string(),
+        variants: item_enum
+            .variants
+            .iter()
+            .map(|variant| variant.ident.to_string())
+            .collect(),
+    }
+}
 
-    EnumInfo { name, variants }
+fn process_struct(item_struct: &ItemStruct) -> StructInfo {
+    let name = item_struct.ident.to_string();
+    let mut fields = Vec::new();
+
+    if let Fields::Named(named_fields) = &item_struct.fields {
+        for field in &named_fields.named {
+            if let Some(ident) = &field.ident {
+                fields.push(FieldInfo {
+                    name: ident.to_string(),
+                    type_name: get_type_name(&field.ty),
+                });
+            }
+        }
+    }
+
+    StructInfo {
+        name,
+        fields,
+        methods: Vec::new(),
+    }
+}
+
+fn process_impl(item_impl: &ItemImpl, struct_info: &mut StructInfo) {
+    for item in &item_impl.items {
+        if let ImplItem::Fn(method) = item {
+            // Skip new() constructors
+            if method.sig.ident == "new" {
+                continue;
+            }
+
+            let mut params = Vec::new();
+
+            for input in &method.sig.inputs {
+                match input {
+                    FnArg::Typed(pat_type) => {
+                        if let Pat::Ident(pat_ident) = &*pat_type.pat {
+                            params.push(ParamInfo {
+                                name: pat_ident.ident.to_string(),
+                                type_name: get_type_name(&pat_type.ty),
+                            });
+                        }
+                    }
+                    FnArg::Receiver(_) => {}
+                }
+            }
+
+            let return_type = match &method.sig.output {
+                ReturnType::Default => "void".to_string(),
+                ReturnType::Type(_, ty) => get_type_name(ty),
+            };
+
+            struct_info.methods.push(MethodInfo {
+                name: method.sig.ident.to_string(),
+                params,
+                return_type,
+            });
+        }
+    }
+}
+
+fn get_type_name(ty: &Type) -> String {
+    match ty {
+        Type::Path(TypePath { path, .. }) => {
+            let mut full_type = String::new();
+
+            if let Some(last_segment) = path.segments.last() {
+                full_type.push_str(&last_segment.ident.to_string());
+
+                if let PathArguments::AngleBracketed(args) = &last_segment.arguments {
+                    let generic_args: Vec<String> = args
+                        .args
+                        .iter()
+                        .filter_map(|arg| {
+                            if let GenericArgument::Type(ty) = arg {
+                                Some(get_type_name(ty))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+
+                    if !generic_args.is_empty() {
+                        full_type.push('<');
+                        full_type.push_str(&generic_args.join(", "));
+                        full_type.push('>');
+                    }
+                }
+            }
+
+            full_type
+        }
+        Type::Reference(type_ref) => get_type_name(&type_ref.elem),
+        _ => "unknown".to_string(),
+    }
 }
 
 fn extract_relationships(structs: &[StructInfo], enums: &[EnumInfo]) -> HashSet<Relationship> {
@@ -154,6 +248,40 @@ fn extract_relationships(structs: &[StructInfo], enums: &[EnumInfo]) -> HashSet<
     let enum_names: HashSet<_> = enums.iter().map(|e| e.name.as_str()).collect();
 
     for struct_info in structs {
+        // Process method return types for creation relationships
+        for method in &struct_info.methods {
+            let return_type_info = parse_type_with_generics(&method.return_type);
+
+            // Handle Result types
+            if return_type_info.base_type == "Result" {
+                relationships.insert(Relationship {
+                    from: struct_info.name.clone(),
+                    to: "Result".to_string(),
+                    relationship_type: "uses".to_string(),
+                });
+
+                // Check if Result contains a struct type
+                for inner_type in &return_type_info.generic_params {
+                    if struct_names.contains(inner_type.as_str()) {
+                        relationships.insert(Relationship {
+                            from: struct_info.name.clone(),
+                            to: inner_type.clone(),
+                            relationship_type: "creates".to_string(),
+                        });
+                    }
+                }
+            }
+            // Handle direct struct return types
+            else if struct_names.contains(return_type_info.base_type.as_str()) {
+                relationships.insert(Relationship {
+                    from: struct_info.name.clone(),
+                    to: return_type_info.base_type.clone(),
+                    relationship_type: "creates".to_string(),
+                });
+            }
+        }
+
+        // Process fields for has/uses relationships
         for field in &struct_info.fields {
             let type_info = parse_type_with_generics(&field.type_name);
 
@@ -227,97 +355,6 @@ fn parse_type_with_generics(type_str: &str) -> TypeInfo {
     TypeInfo {
         base_type,
         generic_params,
-    }
-}
-
-fn process_struct(item_struct: &ItemStruct) -> StructInfo {
-    let name = item_struct.ident.to_string();
-    let mut fields = Vec::new();
-
-    if let Fields::Named(named_fields) = &item_struct.fields {
-        for field in &named_fields.named {
-            if let Some(ident) = &field.ident {
-                fields.push(FieldInfo {
-                    name: ident.to_string(),
-                    type_name: get_type_name(&field.ty),
-                });
-            }
-        }
-    }
-
-    StructInfo {
-        name,
-        fields,
-        methods: Vec::new(),
-    }
-}
-
-fn process_impl(item_impl: &ItemImpl, struct_info: &mut StructInfo) {
-    for item in &item_impl.items {
-        if let ImplItem::Fn(method) = item {
-            let mut params = Vec::new();
-
-            for input in &method.sig.inputs {
-                match input {
-                    FnArg::Typed(pat_type) => {
-                        if let Pat::Ident(pat_ident) = &*pat_type.pat {
-                            params.push(ParamInfo {
-                                name: pat_ident.ident.to_string(),
-                                type_name: get_type_name(&pat_type.ty),
-                            });
-                        }
-                    }
-                    FnArg::Receiver(_) => {}
-                }
-            }
-
-            let return_type = match &method.sig.output {
-                ReturnType::Default => "void".to_string(),
-                ReturnType::Type(_, ty) => get_type_name(ty),
-            };
-
-            struct_info.methods.push(MethodInfo {
-                name: method.sig.ident.to_string(),
-                params,
-                return_type,
-            });
-        }
-    }
-}
-
-fn get_type_name(ty: &Type) -> String {
-    match ty {
-        Type::Path(TypePath { path, .. }) => {
-            let mut full_type = String::new();
-
-            if let Some(last_segment) = path.segments.last() {
-                full_type.push_str(&last_segment.ident.to_string());
-
-                if let PathArguments::AngleBracketed(args) = &last_segment.arguments {
-                    let generic_args: Vec<String> = args
-                        .args
-                        .iter()
-                        .filter_map(|arg| {
-                            if let GenericArgument::Type(ty) = arg {
-                                Some(get_type_name(ty))
-                            } else {
-                                None
-                            }
-                        })
-                        .collect();
-
-                    if !generic_args.is_empty() {
-                        full_type.push('<');
-                        full_type.push_str(&generic_args.join(", "));
-                        full_type.push('>');
-                    }
-                }
-            }
-
-            full_type
-        }
-        Type::Reference(type_ref) => get_type_name(&type_ref.elem),
-        _ => "unknown".to_string(),
     }
 }
 

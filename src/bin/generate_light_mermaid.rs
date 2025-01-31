@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs;
-use std::io::{self, Write};
+use std::io::{self};
 
 #[derive(Debug)]
 struct TraitInfo {

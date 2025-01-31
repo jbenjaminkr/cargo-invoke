@@ -69,7 +69,7 @@ fn show_help(manifest: &CommandsManifest) {
     println!("\nUse 'cargo invoke <command> --help' for more information on a specific command.");
 }
 
-fn show_command_help(command: &str, info: &CommandInfo) {
+fn show_command_help(_: &str, info: &CommandInfo) {
     println!("Usage:\n  {}\n", info.usage);
     println!("Description:\n  {}\n", info.description);
 
@@ -93,7 +93,7 @@ fn show_command_help(command: &str, info: &CommandInfo) {
 fn main() -> Result<(), Box<dyn Error>> {
     let manifest = load_commands_manifest()?;
     let original_args: Vec<String> = env::args().collect();
-    let (invoke_subcommand, args) = if original_args.len() > 1 && original_args[1] == "invoke" {
+    let (_, args) = if original_args.len() > 1 && original_args[1] == "invoke" {
         (
             true,
             original_args

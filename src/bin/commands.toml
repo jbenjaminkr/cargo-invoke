@@ -1,42 +1,42 @@
 [commands]
 [commands.architecture]
-description = "Reads all impls, structs, and imports, and creates architecture/impls.rs, architecture/structs.rs, and architecture/preludes.rs"
-usage = "cargo architecture [OPTIONS]"
+description = "Extracts all impls, structs, and imports to architecture/*.rs"
+usage = "cargo invoke architecture [OPTIONS]"
 examples = [
-    "cargo architecture",
-    "cargo architecture --output custom_path",
+    "cargo invoke architecture",
+    "cargo invoke architecture --output custom_path",
 ]
 [[commands.architecture.parameters]]
 name = "--output <PATH>"
 description = "Specifies the output directory for the generated files."
 
 [commands.diagram]
-description = "Creates a mermaid diagram from a Rust file containing structs which maps their relationships via state transitions from function calls"
-usage = "cargo diagram <TARGET> [OPTIONS]"
+description = "Creates a mermaid diagram from a Rust file mapping struct relationships via function calls"
+usage = "cargo invoke diagram <TARGET> [OPTIONS]"
 examples = [
-    "cargo diagram src/lib.rs",
-    "cargo diagram src/main.rs --format png",
+    "cargo invoke diagram src/lib.rs",
+    "cargo invoke diagram src/main.rs --format png",
 ]
 [[commands.diagram.parameters]]
 name = "<TARGET>"
 description = "Specifies the source Rust file to generate the diagram from."
 
-[commands.visualize]
+[commands.view]
 description = "Creates a png/svg from a mermaid diagram"
-usage = "cargo diagram <TARGET> [OPTIONS]"
+usage = "cargo invoke view <TARGET> [OPTIONS]"
 examples = [
-    "cargo diagram src/lib.rs",
-    "cargo diagram src/main.rs --format png",
+    "cargo invoke view src/lib.rs",
+    "cargo invoke view src/main.rs --format png",
 ]
-[[commands.visualize.parameters]]
+[[commands.view.parameters]]
 name = "<TARGET>"
 description = ""
 
 [commands.connections]
 description = "Generates a Mermaid diagram showing class relationships through function calls"
-usage = "cargo connections [OPTIONS]"
+usage = "cargo invoke connections [OPTIONS]"
 examples = [
-    "cargo connections",
+    "cargo invoke connections",
 ]
 [[commands.connections.parameters]]
 name = "[OPTIONS]"
@@ -44,9 +44,9 @@ description = ""
 
 [commands.state_diagram]
 description = "Generates a Mermaid diagram showing struct relationships through state transitions"
-usage = "cargo state_diagram [OPTIONS]"
+usage = "cargo invoke state_diagram [OPTIONS]"
 examples = [
-    "cargo state_diagram",
+    "cargo invoke state_diagram",
 ]
 [[commands.state_diagram.parameters]]
 name = "[OPTIONS]"
@@ -54,10 +54,30 @@ description = ""
 
 [commands.class_diagram]
 description = "Generates a Mermaid diagram showing class relationships through state transitions"
-usage = "cargo class_diagram [OPTIONS]"
+usage = "cargo invoke class_diagram [OPTIONS]"
 examples = [
-    "cargo class_diagram",
+    "cargo invoke class_diagram",
 ]
 [[commands.class_diagram.parameters]]
+name = "[OPTIONS]"
+description = ""
+
+[commands.view_class_diagram]
+description = "Presents a Mermaid diagram showing class relationships through state transitions"
+usage = "cargo invoke view_class_diagram [OPTIONS]"
+examples = [
+    "cargo invoke view_class_diagram",
+]
+[[commands.view_class_diagram.parameters]]
+name = "[OPTIONS]"
+description = ""
+
+[commands.view_connections]
+description = "Presents a Mermaid diagram showing abbreviated class relationships through state transitions"
+usage = "cargo invoke view_connections [OPTIONS]"
+examples = [
+    "cargo invoke view_connections",
+]
+[[commands.view_connections.parameters]]
 name = "[OPTIONS]"
 description = ""

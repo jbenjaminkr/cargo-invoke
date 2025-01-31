@@ -16,7 +16,6 @@ struct ClassAssignment {
     class_name: String,
 }
 
-#[derive(Debug)]
 struct Subgraph {
     name: String,
     content: String,
