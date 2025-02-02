@@ -1,7 +1,10 @@
 [package]
-name = "cargo-invoke"
+name = "cargo_invoke"
 version = "0.1.0"
 edition = "2021"
+authors = ["J"]
+description = "CLI for generating architecture and diagrams"
+license = "MIT"
 
 [[bin]]
 name = "cargo-invoke"
