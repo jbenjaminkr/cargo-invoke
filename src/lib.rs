@@ -1,9 +1,4 @@
-pub mod crate::common;
-pub mod crate::config;
-pub mod crate::error;
-
-pub use config::Config;
-pub use error::Error;
+use anyhow::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
